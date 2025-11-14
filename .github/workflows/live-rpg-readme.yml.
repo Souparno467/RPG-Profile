@@ -1,0 +1,86 @@
+name: Live RPG README
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # daily at midnight UTC
+  workflow_dispatch:
+
+jobs:
+  update-rpg-readme:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Fetch Contributions
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        USERNAME: Souparno467
+      run: |
+        sudo apt-get update && sudo apt-get install -y jq
+
+        curl -s -H "Authorization: token $GITHUB_TOKEN" \
+          "https://api.github.com/users/$USERNAME/repos?per_page=100" > repos.json
+
+        PYTHON_XP=0
+        REACT_XP=0
+        JAVA_XP=0
+        ML_XP=0
+        GENAI_XP=0
+
+        for repo in $(jq -r '.[].name' repos.json); do
+          LANG=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$USERNAME/$repo/languages" | jq -r 'keys[]?')
+          
+          COMMITS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$USERNAME/$repo/commits?author=$USERNAME&per_page=100" | jq '. | length')
+          
+          for lang in $LANG; do
+            case $lang in
+              "Python") PYTHON_XP=$((PYTHON_XP + COMMITS)) ;;
+              "JavaScript") REACT_XP=$((REACT_XP + COMMITS/2)) ;;
+              "Java") JAVA_XP=$((JAVA_XP + COMMITS)) ;;
+              "Jupyter Notebook") ML_XP=$((ML_XP + COMMITS)) ;;
+              "HTML") REACT_XP=$((REACT_XP + COMMITS/2)) ;;
+              "CSS") REACT_XP=$((REACT_XP + COMMITS/2)) ;;
+            esac
+          done
+        done
+
+        PYTHON_XP=$(( PYTHON_XP > 100 ? 100 : PYTHON_XP ))
+        REACT_XP=$(( REACT_XP > 100 ? 100 : REACT_XP ))
+        JAVA_XP=$(( JAVA_XP > 100 ? 100 : JAVA_XP ))
+        ML_XP=$(( ML_XP > 100 ? 100 : ML_XP ))
+        GENAI_XP=$(( GENAI_XP > 100 ? 100 : GENAI_XP ))
+
+        echo "Python XP=$PYTHON_XP" >> $GITHUB_ENV
+        echo "React XP=$REACT_XP" >> $GITHUB_ENV
+        echo "Java XP=$JAVA_XP" >> $GITHUB_ENV
+        echo "ML XP=$ML_XP" >> $GITHUB_ENV
+        echo "GenAI XP=$GENAI_XP" >> $GITHUB_ENV
+
+    - name: Update README
+      run: |
+        README="README.md"
+
+        PYTHON_BAR="https://img.shields.io/badge/Python-${PYTHON_XP}%25-00D9FF?style=for-the-badge"
+        REACT_BAR="https://img.shields.io/badge/React-${REACT_XP}%25-61DAFB?style=for-the-badge"
+        JAVA_BAR="https://img.shields.io/badge/Java-${JAVA_XP}%25-FFD700?style=for-the-badge"
+        ML_BAR="https://img.shields.io/badge/Machine_Learning-${ML_XP}%25-00FF88?style=for-the-badge"
+        GENAI_BAR="https://img.shields.io/badge/GenAI-${GENAI_XP}%25-FF00FF?style=for-the-badge"
+
+        sed -i "s|https://img.shields.io/badge/Python-.*-00D9FF?style=for-the-badge|$PYTHON_BAR|" $README
+        sed -i "s|https://img.shields.io/badge/React-.*-61DAFB?style=for-the-badge|$REACT_BAR|" $README
+        sed -i "s|https://img.shields.io/badge/Java-.*-FFD700?style=for-the-badge|$JAVA_BAR|" $README
+        sed -i "s|https://img.shields.io/badge/Machine_Learning-.*-00FF88?style=for-the-badge|$ML_BAR|" $README
+        sed -i "s|https://img.shields.io/badge/GenAI-.*-FF00FF?style=for-the-badge|$GENAI_BAR|" $README
+
+    - name: Commit & Push
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add README.md
+        git commit -m "Live RPG XP Update" || echo "No changes to commit"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

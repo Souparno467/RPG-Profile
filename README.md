@@ -15,7 +15,7 @@
 
 | Skill           | Level | XP Progress |
 |-----------------|-------|-------------|
-| Python          | ⚡    | ![Python](https://img.shields.io/badge/Python-84%25-00D9FF?style=for-the-badge) |
+| Python          | ⚡    | ![Python](https://img.shields.io/badge/Python-85%25-00D9FF?style=for-the-badge) |
 | React           | 🌐    | ![React](https://img.shields.io/badge/React-60%25-61DAFB?style=for-the-badge) |
 | Java            | 🔥    | ![Java](https://img.shields.io/badge/Java-64%25-FFD700?style=for-the-badge) |
 | Machine Learning| 🎯    | ![ML](https://img.shields.io/badge/Machine_Learning-0%25-00FF88?style=for-the-badge) |
